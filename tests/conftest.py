@@ -38,8 +38,32 @@ except ModuleNotFoundError:  # pragma: no cover
             f"pytest-asyncio is required for async tests but could not be installed: {exc}"
         )
 
-if "pytest_asyncio" in sys.modules:  # pragma: no cover - plugin auto-registration helper
-    pytest_plugins = ("pytest_asyncio",)
+try:  # pragma: no cover - ensure pytest-cov is available for coverage reporting
+    import pytest_cov  # type: ignore  # noqa: F401
+except ModuleNotFoundError:  # pragma: no cover
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "pytest-cov>=4.1"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        warnings.warn("Installed pytest-cov dynamically to enable coverage reporting.")
+        import pytest_cov  # type: ignore  # noqa: F401
+    except Exception as exc:  # pragma: no cover
+        warnings.warn(
+            f"pytest-cov is required for coverage reporting but could not be installed: {exc}"
+        )
+
+loaded_plugins = []
+if "pytest_asyncio" in sys.modules:
+    loaded_plugins.append("pytest_asyncio")
+if "pytest_cov" in sys.modules:
+    loaded_plugins.append("pytest_cov")
+
+if loaded_plugins:  # pragma: no cover - plugin auto-registration helper
+    pytest_plugins = tuple(loaded_plugins)
 
 from src import app
 from tortoise import Tortoise
@@ -58,7 +82,7 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 async def setup_database():
     """设置测试数据库"""
     # 使用临时SQLite数据库
