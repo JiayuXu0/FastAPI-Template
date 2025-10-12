@@ -130,12 +130,15 @@ disable = ["C0103", "R0903", "W0613"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = "-ra -q --strict-markers --strict-config"
+addopts = "-ra --strict-markers --strict-config --asyncio-mode=auto --cov=src --cov-report=term-missing --cov-branch"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-asyncio_mode = "auto"
+markers = [
+    "unit: fast-running isolated tests",
+    "integration: end-to-end tests hitting the FastAPI stack",
+]
 
 [tool.coverage.run]
 source = ["src"]
