@@ -211,3 +211,8 @@ logs/*.log
 
 # Documentation files (internal use only)
 IMPROVEMENT_ROADMAP.md
+
+# 私人草稿 / 临时笔记（避免误提交博客底稿、todo 等）
+/1.md
+*.scratch.md
+.scratch/

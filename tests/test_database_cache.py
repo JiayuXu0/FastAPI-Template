@@ -1,5 +1,7 @@
 """数据库和缓存集成测试"""
 
+import uuid
+
 import pytest
 from httpx import AsyncClient
 from src.repositories.user import user_repository
@@ -165,7 +167,7 @@ class TestCacheIntegration:
 
         call_count = 0
 
-        @cached("test_decorator", ttl=60)
+        @cached(f"test_decorator:{uuid.uuid4().hex}", ttl=60)
         async def test_function(param: str) -> str:
             nonlocal call_count
             call_count += 1

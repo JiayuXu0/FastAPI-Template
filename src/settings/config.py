@@ -124,6 +124,52 @@ class Settings(BaseSettings):
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     CACHE_TTL: int = 300  # 默认缓存过期时间（秒）
 
+    # 可观测性
+    METRICS_ALLOWED_IPS: str = os.getenv(
+        "METRICS_ALLOWED_IPS", "127.0.0.1,::1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+    )
+    SENTRY_DSN: str = os.getenv("SENTRY_DSN", "")
+    SENTRY_TRACES_SAMPLE_RATE: float = float(
+        os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.1")
+    )
+
+    # arq 任务队列
+    ARQ_REDIS_DB: int = int(os.getenv("ARQ_REDIS_DB", "1"))
+    ARQ_QUEUE_NAME: str = os.getenv("ARQ_QUEUE_NAME", "arq:queue")
+    ARQ_MAX_JOBS: int = int(os.getenv("ARQ_MAX_JOBS", "10"))
+    ARQ_JOB_TIMEOUT: int = int(os.getenv("ARQ_JOB_TIMEOUT", "300"))
+    ARQ_KEEP_RESULT: int = int(os.getenv("ARQ_KEEP_RESULT", "3600"))
+
+    @property
+    def METRICS_ALLOWED_NETWORKS(self) -> list:
+        import ipaddress
+
+        nets = []
+        for raw in self.METRICS_ALLOWED_IPS.split(","):
+            raw = raw.strip()
+            if not raw:
+                continue
+            try:
+                nets.append(ipaddress.ip_network(raw, strict=False))
+            except ValueError:
+                continue
+        return nets
+
+    @property
+    def ARQ_REDIS_SETTINGS(self):
+        """从 REDIS_URL 派生 arq RedisSettings，仅替换 db。"""
+        from urllib.parse import urlparse
+
+        from arq.connections import RedisSettings
+
+        u = urlparse(self.REDIS_URL)
+        return RedisSettings(
+            host=u.hostname or "localhost",
+            port=u.port or 6379,
+            password=u.password,
+            database=self.ARQ_REDIS_DB,
+        )
+
     @field_validator("COMPANY_ROLE_MAPPING", mode="before")
     @classmethod
     def parse_company_role_mapping(cls, v):

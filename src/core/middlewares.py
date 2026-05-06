@@ -1,8 +1,8 @@
 import json
 import re
+import traceback
 from collections.abc import AsyncGenerator
 from datetime import datetime
-import traceback
 from typing import Any
 
 from fastapi import FastAPI
@@ -13,7 +13,6 @@ from starlette.requests import Request
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from core.dependency import AuthControl
-from log import logger
 from log.context import LogContext
 from models.admin import AuditLog, User
 
@@ -58,9 +57,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         # 仅在HTTPS环境下添加HSTS头
         if request.url.scheme == "https":
-            response.headers[
-                "Strict-Transport-Security"
-            ] = "max-age=31536000; includeSubDomains"
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains"
+            )
 
         return response
 
@@ -263,9 +262,13 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         """处理请求并记录日志"""
         start_time = datetime.now()
-        
-        # 设置请求级上下文信息
-        request_id = LogContext.set_request_id()
+
+        # 透传上游 trace_id：优先 X-Request-ID 头；缺失则生成
+        incoming_id = request.headers.get("x-request-id") or request.headers.get(
+            "X-Request-ID"
+        )
+        request_id = LogContext.set_request_id(incoming_id)
+        request.state.trace_id = request_id
         LogContext.update_context(
             method=request.method,
             path=request.url.path,
@@ -290,7 +293,10 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             # 计算处理时间
             end_time = datetime.now()
             process_time = (end_time - start_time).total_seconds() * 1000
-            
+
+            # 回写 trace_id 到响应头，便于客户端 / 上游追溯
+            response.headers["X-Request-ID"] = request_id
+
             # 更新上下文信息
             LogContext.update_context(
                 status_code=response.status_code,
@@ -310,7 +316,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             # 计算处理时间
             end_time = datetime.now()
             process_time = (end_time - start_time).total_seconds() * 1000
-            
+
             # 更新上下文信息
             LogContext.update_context(
                 exception_occurred=True,
@@ -318,7 +324,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 exception_msg=str(e),
                 process_time_ms=process_time,
                 end_time=end_time.isoformat(),
-                traceback=traceback.format_exc()
+                traceback=traceback.format_exc(),
             )
 
             # 记录详细的请求异常信息

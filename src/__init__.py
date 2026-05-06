@@ -1,6 +1,6 @@
+import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
-import sys
 
 from fastapi import Depends, FastAPI
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
@@ -16,23 +16,55 @@ if str(SRC_DIR) not in sys.path:
 
 from core.dependency import get_current_username
 from core.exceptions import SettingNotFound
-from core.init_app import init_data, make_middlewares, register_exceptions, register_routers
+from core.init_app import (
+    init_data,
+    make_middlewares,
+    register_exceptions,
+    register_routers,
+)
 
 try:
     from settings.config import settings
 except ImportError as e:
     raise SettingNotFound("Can not import settings") from e
 
+from tasks.queue import close_arq_pool, init_arq_pool
 from utils.cache import cache_manager
+
+
+def _init_sentry() -> None:
+    """初始化 Sentry SDK（仅当 SENTRY_DSN 设置时启用）"""
+    if not settings.SENTRY_DSN:
+        return
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.fastapi import FastApiIntegration
+        from sentry_sdk.integrations.starlette import StarletteIntegration
+
+        sentry_sdk.init(
+            dsn=settings.SENTRY_DSN,
+            environment=settings.APP_ENV,
+            release=settings.VERSION,
+            traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
+            integrations=[StarletteIntegration(), FastApiIntegration()],
+        )
+    except Exception:
+        # Sentry 自身故障绝不应阻塞应用启动
+        pass
+
+
+_init_sentry()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await cache_manager.connect()
+    await init_arq_pool()
     await init_data()
     try:
         yield
     finally:
+        await close_arq_pool()
         await cache_manager.disconnect()
         await Tortoise.close_connections()
 

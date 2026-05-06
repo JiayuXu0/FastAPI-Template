@@ -3,10 +3,10 @@
 提供请求追踪和用户关联功能
 """
 
-import uuid
 import traceback
+import uuid
 from contextvars import ContextVar
-from typing import Any, Dict, Optional
+from typing import Any
 
 # 延迟导入，避免循环导入
 # from log import logger
@@ -14,7 +14,15 @@ from typing import Any, Dict, Optional
 # 上下文变量
 request_id_var: ContextVar[str] = ContextVar("request_id", default="-")
 user_id_var: ContextVar[str] = ContextVar("user_id", default="-")
-request_context_var: ContextVar[Dict[str, Any]] = ContextVar("request_context", default={})
+# 默认使用 None 而非 dict，避免 mutable default 在跨任务间被意外共享/修改
+request_context_var: ContextVar[dict[str, Any] | None] = ContextVar(
+    "request_context", default=None
+)
+
+
+def _get_context_dict() -> dict[str, Any]:
+    """安全读取 context dict，None 时返回新 dict（不写回 var）"""
+    return request_context_var.get() or {}
 
 
 class LogContext:
@@ -51,23 +59,23 @@ class LogContext:
     @staticmethod
     def set_context(key: str, value: Any) -> None:
         """设置上下文信息"""
-        context = request_context_var.get({})
+        context = _get_context_dict()
         context[key] = value
         request_context_var.set(context)
-    
+
     @staticmethod
     def get_context(key: str = None) -> Any:
         """获取上下文信息"""
-        context = request_context_var.get({})
+        context = _get_context_dict()
         return context.get(key) if key else context
-    
+
     @staticmethod
     def update_context(**kwargs) -> None:
         """批量更新上下文信息"""
-        context = request_context_var.get({})
+        context = _get_context_dict()
         context.update(kwargs)
         request_context_var.set(context)
-    
+
     @staticmethod
     def get_logger():
         """获取带上下文的logger"""
@@ -75,13 +83,13 @@ class LogContext:
         from log.log import logger
 
         # 获取所有上下文信息
-        context = request_context_var.get({})
+        context = _get_context_dict()
         base_context = {
             "request_id": LogContext.get_request_id(),
             "user_id": LogContext.get_user_id(),
         }
         base_context.update(context)
-        
+
         return logger.bind(**base_context)
 
     @staticmethod
@@ -121,10 +129,10 @@ class RequestLogContext:
                 extra={
                     "exception_type": exc_type.__name__,
                     "exception_msg": str(exc_val),
-                    "traceback": traceback.format_exc()
-                }
+                    "traceback": traceback.format_exc(),
+                },
             )
-        
+
         # 恢复旧值
         request_id_var.set(self.old_request_id)
         user_id_var.set(self.old_user_id)

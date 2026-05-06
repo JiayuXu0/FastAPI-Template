@@ -7,98 +7,141 @@ on:
     branches: [ main, master, develop ]
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      # 真红线：ruff lint 与格式都必须通过；不再 || true
+      - name: Lint with ruff
+        run: uv run ruff check src/
+
+      - name: Format check with ruff
+        run: uv run ruff format --check src/
+
+      # mypy 当前还有积压错误（issue 跟踪），跑出来作为 informational artifact，
+      # 不阻断流水线；后续逐步清理后再改为真红线。
+      - name: Type check with mypy (informational)
+        env:
+          SECRET_KEY: test_secret_key_for_testing_only_32_chars_long
+          SWAGGER_UI_PASSWORD: test_password_123
+          DB_PASSWORD: test_db_password
+          APP_ENV: testing
+          DEBUG: "True"
+        run: uv run mypy src/ --no-error-summary > mypy_report.txt 2>&1 || true
+
+      - name: Upload mypy report
+        uses: actions/upload-artifact@v4
+        with:
+          name: mypy-report
+          path: mypy_report.txt
+
   test:
     runs-on: ubuntu-latest
+    needs: [lint]
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v2
-      with:
-        version: "latest"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+        with:
+          version: "latest"
 
-    - name: Set up Python ${{ matrix.python-version }}
-      run: uv python install ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
 
-    - name: Install dependencies
-      run: |
-        uv sync --dev
+      - name: Install dependencies
+        run: uv sync --dev
 
-    - name: Lint with ruff
-      run: |
-        uv run ruff check src/ --ignore=E501,F403,F405,B904,C408,B006,UP038,C416,B007 || true
-        uv run ruff format --check src/ || echo "Code formatting issues found"
+      # 真红线：跑 tests/ 全集
+      - name: Run tests with coverage
+        env:
+          SECRET_KEY: test_secret_key_for_testing_only_32_chars_long
+          SWAGGER_UI_PASSWORD: test_password_123
+          DB_PASSWORD: test_db_password
+          APP_ENV: testing
+          DEBUG: "True"
+          REDIS_URL: redis://localhost:6379/0
+        run: |
+          uv run pytest tests/ -v \
+            --cov=src --cov-report=xml --cov-report=html --cov-report=term-missing \
+            --cov-fail-under=30
 
-    - name: Type check with mypy
-      env:
-        SECRET_KEY: test_secret_key_for_testing_only_32_chars_long
-        SWAGGER_UI_PASSWORD: test_password_123
-        DB_PASSWORD: test_db_password
-        APP_ENV: testing
-        DEBUG: "True"
-      run: |
-        uv run mypy src/ || true  # Allow mypy to fail for now
+      - name: Upload coverage reports
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            coverage.xml
+            htmlcov/
 
-    - name: Test with pytest
-      env:
-        SECRET_KEY: test_secret_key_for_testing_only_32_chars_long
-        SWAGGER_UI_PASSWORD: test_password_123
-        DB_PASSWORD: test_db_password
-        APP_ENV: testing
-        DEBUG: "True"
-      run: |
-        uv run pytest tests/test_core_functionality.py tests/test_simple_jwt.py -v --cov=src --cov-report=xml --cov-report=html --cov-report=term-missing
-
-    - name: Upload coverage reports
-      if: matrix.python-version == '3.11'
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-reports
-        path: |
-          coverage.xml
-          htmlcov/
-
-    - name: Upload coverage to Codecov
-      if: matrix.python-version == '3.11'
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.11'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
 
   security:
     runs-on: ubuntu-latest
+    needs: [lint]
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v2
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
 
-    - name: Set up Python
-      run: uv python install 3.11
+      - name: Set up Python
+        run: uv python install 3.11
 
-    - name: Install dependencies
-      run: uv sync --dev
+      - name: Install dependencies
+        run: uv sync --dev
 
-    - name: Run security checks with bandit
-      env:
-        SECRET_KEY: test_secret_key_for_testing_only_32_chars_long
-        SWAGGER_UI_PASSWORD: test_password_123
-        DB_PASSWORD: test_db_password
-        APP_ENV: testing
-        DEBUG: "True"
-      run: |
-        uv run bandit -r src/ || true  # Allow bandit to fail for now
+      # 真红线：bandit 中/高严重度 → 必须修；low 通过 -ll 过滤
+      - name: Run security checks with bandit (medium+ severity)
+        env:
+          SECRET_KEY: test_secret_key_for_testing_only_32_chars_long
+          SWAGGER_UI_PASSWORD: test_password_123
+          DB_PASSWORD: test_db_password
+          APP_ENV: testing
+          DEBUG: "True"
+        run: uv run bandit -r src/ -ll
 
-    - name: Check for known vulnerabilities
-      run: |
-        uv run safety check || true  # Allow safety to fail for now
+      # safety 现在需要登录账号，改用 pip-audit（PyPA 维护、无需登录）
+      - name: Run dependency vulnerability scan (informational)
+        run: |
+          uv pip install pip-audit
+          uv run pip-audit --strict --skip-editable || true
 
   build:
     runs-on: ubuntu-latest
@@ -106,22 +149,22 @@ jobs:
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v2
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
 
-    - name: Set up Python
-      run: uv python install 3.11
+      - name: Set up Python
+        run: uv python install 3.11
 
-    - name: Build package
-      run: |
-        uv sync
-        uv build
+      - name: Build package
+        run: |
+          uv sync
+          uv build
 
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: python-package-distributions
-        path: dist/
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/

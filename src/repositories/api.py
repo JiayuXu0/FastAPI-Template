@@ -4,13 +4,16 @@ from core.crud import CRUDBase
 from log import logger
 from models.admin import Api
 from schemas.apis import ApiCreate, ApiUpdate
+from utils.cache import clear_user_perms_cache_all
 
 
 class ApiRepository(CRUDBase[Api, ApiCreate, ApiUpdate]):
     def __init__(self):
         super().__init__(model=Api)
 
-    async def refresh_api(self):
+    async def refresh_api(self) -> dict:
+        """同步路由表 → Api 表。返回 {created, updated, deleted} 计数，
+        供调用方判断是否真发生变更（init 期判断升级路径用得到）。"""
         from src import app
 
         routes = app.routes
@@ -30,6 +33,8 @@ class ApiRepository(CRUDBase[Api, ApiCreate, ApiUpdate]):
             logger.debug(f"API Deleted {method} {path}")
             await Api.filter(method=method, path=path).delete()
 
+        created_count = 0
+        updated_count = 0
         for route in routes:
             if isinstance(route, APIRoute) and len(route.dependencies) > 0:
                 method = list(route.methods)[0]
@@ -39,23 +44,35 @@ class ApiRepository(CRUDBase[Api, ApiCreate, ApiUpdate]):
                 api_obj = await Api.filter(method=method, path=path).first()
                 if api_obj:
                     await api_obj.update_from_dict(
-                        dict(
-                            method=method,
-                            path=path,
-                            summary=summary,
-                            tags=tags,
-                        )
+                        {
+                            "method": method,
+                            "path": path,
+                            "summary": summary,
+                            "tags": tags,
+                        }
                     ).save()
+                    updated_count += 1
                 else:
                     logger.debug(f"API Created {method} {path}")
                     await Api.create(
-                        **dict(
-                            method=method,
-                            path=path,
-                            summary=summary,
-                            tags=tags,
-                        )
+                        **{
+                            "method": method,
+                            "path": path,
+                            "summary": summary,
+                            "tags": tags,
+                        }
                     )
+                    created_count += 1
+
+        # API 表变更影响所有用户的权限决策，全量失效权限缓存
+        if created_count or updated_count or delete_api:
+            await clear_user_perms_cache_all()
+
+        return {
+            "created": created_count,
+            "updated": updated_count,
+            "deleted": len(delete_api),
+        }
 
 
 api_repository = ApiRepository()

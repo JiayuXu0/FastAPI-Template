@@ -7,6 +7,7 @@ from repositories.api import api_repository
 from schemas import Success, SuccessExtra
 from schemas.apis import ApiCreate, ApiUpdate
 from schemas.response import ApiInfo, ApiListResponse, ResponseBase
+from utils.cache import clear_user_perms_cache_all
 
 router = APIRouter()
 
@@ -49,6 +50,7 @@ async def create_api(
     api_in: ApiCreate,
 ):
     await api_repository.create(obj_in=api_in)
+    await clear_user_perms_cache_all()
     result = Success(msg="Created Successfully")
     return json.loads(result.body)
 
@@ -58,6 +60,7 @@ async def update_api(
     api_in: ApiUpdate,
 ):
     await api_repository.update(id=api_in.id, obj_in=api_in)
+    await clear_user_perms_cache_all()
     result = Success(msg="Update Successfully")
     return json.loads(result.body)
 
@@ -67,6 +70,7 @@ async def delete_api(
     api_id: int = Query(..., description="ApiID"),
 ):
     await api_repository.remove(id=api_id)
+    await clear_user_perms_cache_all()
     result = Success(msg="Deleted Success")
     return json.loads(result.body)
 

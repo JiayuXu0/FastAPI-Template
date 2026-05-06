@@ -2,8 +2,10 @@
 统一响应模型定义
 用于Swagger文档展示和响应数据验证
 """
-from typing import Any, Generic, TypeVar
+
 from datetime import datetime
+from typing import Generic, TypeVar
+
 from pydantic import BaseModel, Field, field_validator
 
 T = TypeVar("T")
@@ -11,6 +13,7 @@ T = TypeVar("T")
 
 class ResponseBase(BaseModel, Generic[T]):
     """基础响应模型"""
+
     code: int = Field(default=200, description="响应状态码")
     msg: str = Field(default="OK", description="响应消息")
     data: T | None = Field(default=None, description="响应数据")
@@ -22,17 +25,12 @@ class ResponseBase(BaseModel, Generic[T]):
         return "OK" if v is None else v
 
     class Config:
-        json_schema_extra = {
-            "example": {
-                "code": 200,
-                "msg": "OK",
-                "data": None
-            }
-        }
+        json_schema_extra = {"example": {"code": 200, "msg": "OK", "data": None}}
 
 
 class PageResponse(BaseModel, Generic[T]):
     """分页响应模型"""
+
     code: int = Field(default=200, description="响应状态码")
     msg: str = Field(default="OK", description="响应消息")
     data: T | None = Field(default=None, description="响应数据列表")
@@ -54,19 +52,21 @@ class PageResponse(BaseModel, Generic[T]):
                 "data": [],
                 "total": 0,
                 "page": 1,
-                "page_size": 20
+                "page_size": 20,
             }
         }
 
 
 class ListResponse(ResponseBase[list[T]], Generic[T]):
     """列表响应模型（不分页）"""
+
     pass
 
 
 # ============= 用户相关响应模型 =============
 class UserInfo(BaseModel):
     """用户信息模型"""
+
     id: int = Field(description="用户ID")
     username: str = Field(description="用户名")
     email: str | None = Field(default=None, description="邮箱")
@@ -84,6 +84,7 @@ class UserInfo(BaseModel):
 
 class UserListItem(BaseModel):
     """用户列表项"""
+
     id: int = Field(description="用户ID")
     username: str = Field(description="用户名")
     email: str | None = Field(default=None, description="邮箱")
@@ -99,6 +100,7 @@ class UserListItem(BaseModel):
 # ============= 认证相关响应模型 =============
 class TokenInfo(BaseModel):
     """令牌信息"""
+
     access_token: str = Field(description="访问令牌")
     refresh_token: str = Field(description="刷新令牌")
     token_type: str = Field(default="Bearer", description="令牌类型")
@@ -108,6 +110,7 @@ class TokenInfo(BaseModel):
 
 class CurrentUserInfo(BaseModel):
     """当前用户信息"""
+
     id: int = Field(description="用户ID")
     username: str = Field(description="用户名")
     email: str | None = Field(description="邮箱")
@@ -121,6 +124,7 @@ class CurrentUserInfo(BaseModel):
 # ============= 基础信息响应模型 =============
 class HealthInfo(BaseModel):
     """健康检查信息"""
+
     status: str = Field(default="healthy", description="健康状态")
     timestamp: datetime = Field(description="时间戳")
     environment: str = Field(description="运行环境")
@@ -129,6 +133,7 @@ class HealthInfo(BaseModel):
 
 class VersionInfo(BaseModel):
     """版本信息"""
+
     app_name: str = Field(description="应用名称")
     version: str = Field(description="版本号")
     api_version: str = Field(description="API版本")
@@ -138,6 +143,7 @@ class VersionInfo(BaseModel):
 # ============= 菜单相关响应模型 =============
 class MenuItem(BaseModel):
     """菜单项"""
+
     id: int = Field(description="菜单ID")
     name: str = Field(description="菜单名称")
     menu_type: str = Field(description="菜单类型")
@@ -153,6 +159,7 @@ class MenuItem(BaseModel):
 # ============= 角色相关响应模型 =============
 class RoleInfo(BaseModel):
     """角色信息"""
+
     id: int = Field(description="角色ID")
     name: str = Field(description="角色名称")
     desc: str | None = Field(description="角色描述")
@@ -164,6 +171,7 @@ class RoleInfo(BaseModel):
 
 class RoleListItem(BaseModel):
     """角色列表项"""
+
     id: int = Field(description="角色ID")
     name: str = Field(description="角色名称")
     desc: str | None = Field(description="角色描述")
@@ -173,6 +181,7 @@ class RoleListItem(BaseModel):
 
 class RoleAuthorizedInfo(BaseModel):
     """角色权限详情（包含完整的菜单和API信息）"""
+
     id: int = Field(description="角色ID")
     name: str = Field(description="角色名称")
     desc: str | None = Field(description="角色描述")
@@ -185,6 +194,7 @@ class RoleAuthorizedInfo(BaseModel):
 # ============= 部门相关响应模型 =============
 class DeptInfo(BaseModel):
     """部门信息"""
+
     id: int = Field(description="部门ID")
     name: str = Field(description="部门名称")
     desc: str | None = Field(description="部门描述")
@@ -197,6 +207,7 @@ class DeptInfo(BaseModel):
 # ============= API权限相关响应模型 =============
 class ApiInfo(BaseModel):
     """API权限信息"""
+
     id: int = Field(description="API ID")
     path: str = Field(description="API路径")
     method: str = Field(description="请求方法")
@@ -207,6 +218,7 @@ class ApiInfo(BaseModel):
 # ============= 审计日志相关响应模型 =============
 class AuditLogItem(BaseModel):
     """审计日志项"""
+
     id: int = Field(description="日志ID")
     user_id: int | None = Field(description="用户ID")
     username: str | None = Field(description="用户名")

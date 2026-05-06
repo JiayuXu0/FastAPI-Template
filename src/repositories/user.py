@@ -9,6 +9,7 @@ from core.crud import CRUDBase
 from models.admin import User
 from schemas.login import CredentialsSchema
 from schemas.users import UserCreate, UserUpdate
+from utils.cache import cache_manager
 from utils.password import get_password_hash, verify_password
 
 from .role import role_repository
@@ -50,6 +51,7 @@ class UserRepository(CRUDBase[User, UserCreate, UserUpdate]):
         for role_id in role_ids:
             role_obj = await role_repository.get(id=role_id)
             await user.roles.add(role_obj)
+        await cache_manager.delete(f"user_perms:{user.id}")
 
     async def reset_password(self, user_id: int) -> str:
         """重置用户密码，返回新密码"""

@@ -1,5 +1,4 @@
 import asyncio
-from functools import partial
 
 from aerich import Command
 from fastapi import FastAPI
@@ -24,6 +23,7 @@ from core.exceptions import (
     ResponseValidationHandle,
     UnhandledExceptionHandle,
 )
+from core.metrics import MetricsMiddleware
 from core.middlewares import (
     BackGroundTaskMiddleware,
     HttpAuditLogMiddleware,
@@ -36,7 +36,6 @@ from repositories.api import api_repository
 from repositories.user import UserCreate, user_repository
 from schemas.menus import MenuType
 from settings.config import settings
-from utils.cache import cache_manager
 
 
 def make_middlewares():
@@ -49,7 +48,8 @@ def make_middlewares():
             allow_headers=settings.CORS_ALLOW_HEADERS,
         ),
         Middleware(SecurityHeadersMiddleware),  # 安全头中间件
-        Middleware(RequestLoggingMiddleware),  # 请求日志中间件
+        Middleware(RequestLoggingMiddleware),  # 请求日志中间件 + trace_id
+        Middleware(MetricsMiddleware),  # Prometheus 指标
         Middleware(BackGroundTaskMiddleware),
         Middleware(
             HttpAuditLogMiddleware,
@@ -202,15 +202,30 @@ async def init_menus():
 
 
 async def init_apis():
-    logger.info("🔧 开始初始化API数据...")
-    apis = await api_repository.model.exists()
-    if not apis:
-        await api_repository.refresh_api()
-        api_count = await Api.all().count()
-        logger.info(f"✅ API数据初始化成功 - API数量: {api_count}")
-    else:
-        api_count = await Api.all().count()
-        logger.info(f"ℹ️ API数据已存在，跳过初始化 - 当前API数量: {api_count}")
+    """每次启动同步 API 表与路由；若有增删则刷新管理员角色的 API 关联。
+
+    解决"已有数据库升级后新加的路由不会被写入 Api 表"的问题：
+    旧实现仅在 Api 表为空时才 refresh，导致升级路径下新启用的路由
+    （如 menus/depts/auditlog）永远不会进入权限分配池。
+    """
+    logger.info("🔧 开始同步 API 数据...")
+    result = await api_repository.refresh_api()
+    api_count = await Api.all().count()
+    logger.info(
+        f"✅ API 同步完成 - 当前 {api_count} 条 "
+        f"(创建 {result['created']}, 更新 {result['updated']}, 删除 {result['deleted']})"
+    )
+
+    # 升级路径补偿：API 集合发生变化时，刷新管理员角色的全量 API 关联。
+    # init_roles 仅在角色不存在时跑（首装），已有库下不会触发 → 必须在这里补。
+    if result["created"] or result["deleted"]:
+        admin = await Role.filter(name="管理员").first()
+        if admin is not None:
+            await admin.apis.clear()
+            all_apis = await Api.all()
+            if all_apis:
+                await admin.apis.add(*all_apis)
+            logger.info(f"🔄 管理员角色 API 关联已刷新（{len(all_apis)} 条）")
 
 
 async def init_db():
@@ -282,42 +297,3 @@ async def init_data():
     await init_roles()
 
     logger.info("🎉 系统初始化完成！")
-
-
-async def startup():
-    """应用启动事件"""
-    logger.info("🚀 Fast API应用启动中...")
-
-    # 初始化Redis连接
-    await cache_manager.connect()
-
-    # 初始化数据库
-    await init_data()
-
-
-async def shutdown():
-    """应用关闭事件"""
-    logger.info("🛑 Fast API应用关闭中...")
-
-    # 断开Redis连接
-    await cache_manager.disconnect()
-
-
-async def init_app(app: FastAPI):
-    """应用启动时初始化"""
-    # 注册启动和关闭事件
-    app.add_event_handler("startup", startup)
-    app.add_event_handler("shutdown", shutdown)
-    logger.info("🎉 Fast API应用启动完成！")
-
-
-async def stop_app(app: FastAPI):
-    """应用关闭时清理"""
-    logger.info("🔧 开始停止系统服务...")
-    logger.info("👋 系统服务已关闭")
-
-
-def register_startup_event(app: FastAPI):
-    """注册启动和关闭事件"""
-    app.add_event_handler("startup", partial(init_app, app))
-    app.add_event_handler("shutdown", partial(stop_app, app))

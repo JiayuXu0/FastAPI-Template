@@ -1,6 +1,7 @@
 from core.crud import CRUDBase
 from models.admin import Api, Menu, Role
 from schemas.roles import RoleCreate, RoleUpdate
+from utils.cache import clear_user_perms_cache_all
 
 
 class RoleRepository(CRUDBase[Role, RoleCreate, RoleUpdate]):
@@ -28,6 +29,9 @@ class RoleRepository(CRUDBase[Role, RoleCreate, RoleUpdate]):
             ).first()
             if api_obj:
                 await role.apis.add(api_obj)
+
+        # 角色权限变更影响所有绑定该角色的用户，全量清除权限缓存
+        await clear_user_perms_cache_all()
 
 
 role_repository = RoleRepository()

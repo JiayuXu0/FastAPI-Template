@@ -14,6 +14,7 @@ from schemas.response import (
     RoleListResponse,
 )
 from schemas.roles import RoleCreate, RoleUpdate, RoleUpdateMenusApis
+from utils.cache import clear_user_perms_cache_all
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -69,11 +70,14 @@ async def delete_role(
     role_id: int = Query(..., description="角色ID"),
 ):
     await role_repository.remove(id=role_id)
+    await clear_user_perms_cache_all()
     result = Success(msg="Deleted Success")
     return json.loads(result.body)
 
 
-@router.get("/authorized", summary="查看角色权限", response_model=RoleAuthorizedResponse)
+@router.get(
+    "/authorized", summary="查看角色权限", response_model=RoleAuthorizedResponse
+)
 async def get_role_authorized(id: int = Query(..., description="角色ID")):
     role_obj = await role_repository.get(id=id)
     data = await role_obj.to_dict(m2m=True)

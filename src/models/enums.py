@@ -8,7 +8,7 @@ class EnumBase(Enum):
 
     @classmethod
     def get_member_names(cls):
-        return [name for name in cls._member_names_]
+        return list(cls._member_names_)
 
 
 class MethodType(StrEnum):

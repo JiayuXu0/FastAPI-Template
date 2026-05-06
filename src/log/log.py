@@ -1,16 +1,15 @@
+import json
 import logging
 import os
 import sys
-import json
 from datetime import date, datetime
-from typing import Any, Dict, Set
+from typing import Any
 
 from loguru import logger as loguru_logger
 
 from settings import settings
 
-
-LOGGING_RESERVED_FIELDS: Set[str] = {
+LOGGING_RESERVED_FIELDS: set[str] = {
     "name",
     "msg",
     "args",
@@ -54,9 +53,9 @@ class InterceptHandler(logging.Handler):
             if key not in LOGGING_RESERVED_FIELDS
         }
 
-        loguru_logger.bind(**extra).opt(
-            depth=depth, exception=record.exc_info
-        ).log(level, record.getMessage())
+        loguru_logger.bind(**extra).opt(depth=depth, exception=record.exc_info).log(
+            level, record.getMessage()
+        )
 
 
 class LoggingConfig:
@@ -78,21 +77,21 @@ class LoggingConfig:
     @staticmethod
     def _json_default(value: Any) -> Any:
         """JSON序列化的默认处理逻辑"""
-        if isinstance(value, (datetime, date)):
+        if isinstance(value, datetime | date):
             return value.isoformat()
-        if isinstance(value, (set, tuple)):
+        if isinstance(value, set | tuple):
             return list(value)
         if isinstance(value, bytes):
             return value.decode("utf-8", errors="replace")
         return str(value)
 
-    def _build_log_entry(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def _build_log_entry(self, record: dict[str, Any]) -> dict[str, Any]:
         """构建标准化的日志结构"""
-        extra: Dict[str, Any] = dict(record.get("extra", {}))
+        extra: dict[str, Any] = dict(record.get("extra", {}))
         # 避免递归引用
         extra.pop("serialized", None)
 
-        log_entry: Dict[str, Any] = {
+        log_entry: dict[str, Any] = {
             "timestamp": record["time"].astimezone().isoformat(),
             "level": record["level"].name,
             "message": record["message"],
@@ -123,7 +122,7 @@ class LoggingConfig:
 
         return log_entry
 
-    def _serialize_record(self, record: Dict[str, Any]) -> str:
+    def _serialize_record(self, record: dict[str, Any]) -> str:
         """序列化日志记录为 JSON 字符串"""
         log_entry = self._build_log_entry(record)
         return json.dumps(
@@ -134,7 +133,7 @@ class LoggingConfig:
             separators=(",", ":") if not self.debug else (",", ": "),
         )
 
-    def _patch_record(self, record: Dict[str, Any]) -> None:
+    def _patch_record(self, record: dict[str, Any]) -> None:
         """为每条日志记录附加序列化后的内容"""
         record.setdefault("extra", {})
         record["extra"]["serialized"] = self._serialize_record(record)
