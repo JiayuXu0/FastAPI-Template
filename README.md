@@ -29,7 +29,7 @@
 [![RBAC](https://img.shields.io/badge/🔐_权限-RBAC-red.svg)](#)
 [![Docker](https://img.shields.io/badge/🐳_容器-Docker-blue.svg)](https://www.docker.com/)
 
-[📖 快速开始](#-快速开始) • [🏗️ 架构说明](#-架构说明) • [📚 开发指南](CLAUDE.md) • [🌐 官网文档](http://fastapi.infyai.cn/) • [🤝 贡献指南](CONTRIBUTING.md) • [🌟 给个Star!](https://github.com/JiayuXu0/FastAPI-Template)
+[📖 快速开始](#-快速开始) • [🏗️ 架构说明](#-架构说明) • [📚 开发指南](CLAUDE.md) • [🌐 官网文档](https://jiayuxu0.github.io/FastAPI-Template/) • [🤝 贡献指南](CONTRIBUTING.md) • [🌟 给个Star!](https://github.com/JiayuXu0/FastAPI-Template)
 
 </div>
 
@@ -281,7 +281,7 @@ docker run --rm -p 8000:8000 --env-file .env fastapi-template
 
 ### 5. 访问服务
 
-- **🌐 官网文档**: http://fastapi.infyai.cn/
+- **🌐 官网文档**: https://jiayuxu0.github.io/FastAPI-Template/
 - **API文档**: http://localhost:8000/docs
 - **替代文档**: http://localhost:8000/redoc
 - **健康检查**: http://localhost:8000/api/v1/base/health
@@ -420,7 +420,7 @@ uv run python docs/gen_pages.py
 - **认证要求** - Bearer Token使用说明
 
 #### 🌐 在线访问
-- **🌐 官网文档**: http://fastapi.infyai.cn/
+- **🌐 官网文档**: https://jiayuxu0.github.io/FastAPI-Template/
 - **本地文档**: http://localhost:8000 (mkdocs serve)
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
