@@ -13,6 +13,8 @@ edit_uri: edit/main/docs/
 theme:
   name: material
   language: zh
+  logo: images/logo.svg
+  favicon: images/logo.svg
   palette:
     # Light mode
     - scheme: default
@@ -32,7 +34,6 @@ theme:
     text: Roboto
     code: Roboto Mono
   icon:
-    logo: material/api
     repo: fontawesome/brands/github
   features:
     - content.code.annotate
@@ -115,8 +116,8 @@ markdown_extensions:
   - pymdownx.caret
   - pymdownx.details
   - pymdownx.emoji:
-      emoji_generator: material.extensions.emoji.to_svg
-      emoji_index: material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span

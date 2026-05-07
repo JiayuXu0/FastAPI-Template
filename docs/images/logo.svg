@@ -1,0 +1,60 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">FastAPI Template logo</title>
+  <desc id="desc">A geometric API gateway mark with connected nodes, a shield, server layers, and a lightning bolt.</desc>
+  <defs>
+    <linearGradient id="teal" x1="58" y1="86" x2="250" y2="445" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#16E0B7"/>
+      <stop offset="1" stop-color="#007F73"/>
+    </linearGradient>
+    <linearGradient id="navy" x1="454" y1="86" x2="260" y2="445" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1E4E9A"/>
+      <stop offset="1" stop-color="#062451"/>
+    </linearGradient>
+    <linearGradient id="bolt" x1="194" y1="164" x2="326" y2="378" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2DE2E6"/>
+      <stop offset="0.52" stop-color="#06B6D4"/>
+      <stop offset="1" stop-color="#0B2D5C"/>
+    </linearGradient>
+    <linearGradient id="shield" x1="219" y1="80" x2="292" y2="192" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#12D6B0"/>
+      <stop offset="1" stop-color="#007A70"/>
+    </linearGradient>
+    <filter id="soft-shadow" x="18" y="50" width="476" height="426" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#052144" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#soft-shadow)">
+    <path d="M170 104L58 184V247L98 256L58 265V328L170 408C190 422 216 408 216 384V340C216 326 209 314 197 306L151 276C137 267 137 245 151 236L197 206C209 198 216 186 216 172V128C216 104 190 90 170 104Z" fill="url(#teal)"/>
+    <path d="M342 104L454 184V247L414 256L454 265V328L342 408C322 422 296 408 296 384V340C296 326 303 314 315 306L361 276C375 267 375 245 361 236L315 206C303 198 296 186 296 172V128C296 104 322 90 342 104Z" fill="url(#navy)"/>
+
+    <path d="M122 256H184" stroke="#DFFFF8" stroke-width="14" stroke-linecap="round"/>
+    <path d="M328 256H390" stroke="#D9F8FF" stroke-width="14" stroke-linecap="round"/>
+    <path d="M142 204H174L204 174" stroke="#DFFFF8" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M142 308H174L204 338" stroke="#DFFFF8" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M370 204H338L308 174" stroke="#D9F8FF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M370 308H338L308 338" stroke="#D9F8FF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <circle cx="122" cy="256" r="18" fill="#F7FFFD" stroke="#08A88F" stroke-width="12"/>
+    <circle cx="204" cy="174" r="18" fill="#F7FFFD" stroke="#08A88F" stroke-width="12"/>
+    <circle cx="204" cy="338" r="18" fill="#F7FFFD" stroke="#08A88F" stroke-width="12"/>
+    <circle cx="390" cy="256" r="18" fill="#F7FFFD" stroke="#0EA5E9" stroke-width="12"/>
+    <circle cx="308" cy="174" r="18" fill="#F7FFFD" stroke="#0EA5E9" stroke-width="12"/>
+    <circle cx="308" cy="338" r="18" fill="#F7FFFD" stroke="#0EA5E9" stroke-width="12"/>
+
+    <path d="M256 72L312 101V145C312 177 291 203 256 216C221 203 200 177 200 145V101L256 72Z" fill="url(#shield)"/>
+    <circle cx="256" cy="125" r="17" fill="white"/>
+    <path d="M225 172C229 151 240 140 256 140C272 140 283 151 287 172H225Z" fill="white"/>
+
+    <path d="M288 180L202 278H258L224 380L330 251H270L288 180Z" fill="url(#bolt)"/>
+    <path d="M180 242H256" stroke="#B8FFF6" stroke-width="14" stroke-linecap="round"/>
+    <path d="M167 278H244" stroke="#B8FFF6" stroke-width="14" stroke-linecap="round"/>
+
+    <rect x="206" y="360" width="122" height="27" rx="12" fill="#092B5B"/>
+    <rect x="206" y="395" width="122" height="27" rx="12" fill="#08264F"/>
+    <circle cx="226" cy="373.5" r="7.5" fill="#E8FFF9"/>
+    <circle cx="226" cy="408.5" r="7.5" fill="#E8FFF9"/>
+    <path d="M344 374L361 384L378 374L396 392L386 409L396 426L378 444L361 434L344 444L326 426L336 409L326 392L344 374Z" fill="#FFC21A"/>
+    <circle cx="361" cy="409" r="16" fill="white"/>
+  </g>
+</svg>

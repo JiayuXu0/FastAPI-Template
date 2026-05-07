@@ -2,6 +2,8 @@
 
 <div align="center">
 
+<img src="docs/images/logo.svg" alt="FastAPI Template logo" width="180" />
+
 **5 分钟搭好企业级 FastAPI 后台 — 认证、RBAC、审计、文件、队列、Docker、CI 全部就绪。**
 
 [English](README.en.md) | [在线文档](https://jiayuxu0.github.io/FastAPI-Template/) | [快速开始](#快速开始) | [核心特性](#核心特性) | [功能矩阵](#功能矩阵) | [贡献](#贡献)
@@ -13,8 +15,6 @@
 
 [![GitHub stars](https://img.shields.io/github/stars/JiayuXu0/FastAPI-Template?style=social)](https://github.com/JiayuXu0/FastAPI-Template/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/JiayuXu0/FastAPI-Template?style=social)](https://github.com/JiayuXu0/FastAPI-Template/forks)
-
-<img src="docs/images/readme-hero.png" alt="FastAPI Template backend architecture hero" width="100%" />
 
 </div>
 
