@@ -1,9 +1,20 @@
+import os
 import secrets
 import string
 
 from passlib.context import CryptContext
 
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+if os.getenv("APP_ENV") == "testing" or os.getenv("TESTING") == "true":
+    pwd_context = CryptContext(
+        schemes=["argon2"],
+        deprecated="auto",
+        argon2__time_cost=1,
+        argon2__memory_cost=1024,
+        argon2__parallelism=1,
+    )
+else:
+    pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+
 PASSWORD_ALPHABET = string.ascii_letters + string.digits
 DEFAULT_PASSWORD_LENGTH = 12
 
