@@ -2,28 +2,17 @@
 
 <div align="center">
 
-**面向企业后台和 SaaS API 的 FastAPI 后端模板。认证、RBAC、用户/角色/菜单/API、审计日志、文件上传、Redis 缓存、Prometheus 指标、Sentry、arq 队列、Docker 和 CI 已经接好。**
+**5 分钟搭好企业级 FastAPI 后台 — 认证、RBAC、审计、文件、队列、Docker、CI 全部就绪。**
 
 [English](README.en.md) | [在线文档](https://jiayuxu0.github.io/FastAPI-Template/) | [快速开始](#快速开始) | [核心特性](#核心特性) | [功能矩阵](#功能矩阵) | [贡献](#贡献)
 
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=flat-square&logo=fastapi&logoColor=white)
-![UV](https://img.shields.io/badge/package%20manager-uv-654FF0?style=flat-square)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-ready-4169E1?style=flat-square&logo=postgresql&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-cache%20%26%20queue-DC382D?style=flat-square&logo=redis&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![CI](https://img.shields.io/github/actions/workflow/status/JiayuXu0/FastAPI-Template/ci.yml?style=flat-square&label=CI)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
 
 [![GitHub stars](https://img.shields.io/github/stars/JiayuXu0/FastAPI-Template?style=social)](https://github.com/JiayuXu0/FastAPI-Template/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/JiayuXu0/FastAPI-Template?style=social)](https://github.com/JiayuXu0/FastAPI-Template/forks)
-
-<a href="https://github.com/JiayuXu0/FastAPI-Template/stargazers">
-  <img src="https://img.shields.io/badge/Star%20this%20repo-if%20it%20helps-FFD700?style=for-the-badge&logo=github&logoColor=black" alt="Star this repo">
-</a>
-<a href="https://github.com/JiayuXu0/create-fastapi-app">
-  <img src="https://img.shields.io/badge/Create%20a%20project-npx%20create--fastapi--app-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="Create a project">
-</a>
 
 <img src="docs/images/readme-hero.png" alt="FastAPI Template backend architecture hero" width="100%" />
 
@@ -31,27 +20,82 @@
 
 ---
 
-## 30 秒判断
+## 目录
 
-| 如果你正在找 | 这里已经准备好 |
-| --- | --- |
-| 一个能直接开业务的后台 API 底座 | 用户、角色、菜单、API 权限、部门、文件、审计日志 |
-| 一个结构清楚的 FastAPI 样板 | API -> Service -> Repository -> Model 三层分离 |
-| 一个带生产基础设施的模板 | Redis、PostgreSQL、Docker、Prometheus、Sentry、arq worker |
-| 一个适合团队长期维护的起点 | UV、ruff、pytest、coverage、GitHub Actions、配置分层 |
-
-如果你的目标是快速做一个企业后台、内部系统、SaaS 管理 API 或权限密集型服务，这个项目能省掉最重复的基础设施搭建。
+- [5 分钟快速体验](#5-分钟快速体验)
+- [适合谁用](#适合谁用)
+- [核心差异](#核心差异)
+- [项目预览](#项目预览)
+- [快速开始](#快速开始)
+- [功能矩阵](#功能矩阵)
+- [架构说明](#架构说明)
+- [项目结构](#项目结构)
+- [常用命令](#常用命令)
+- [配置参考](#配置参考)
+- [API 文档](#api-文档)
+- [安全清单](#安全清单)
+- [Roadmap](#roadmap)
+- [贡献](#贡献)
+- [Star History](#star-history)
+- [License](#license)
 
 ---
 
-## 为什么值得 Star
+## 5 分钟快速体验
 
-很多 FastAPI template 只解决“项目能跑起来”。这个模板更关注“业务开始后不会很快重写基础设施”。
+用最小步骤看到完整效果：
+
+```bash
+git clone https://github.com/JiayuXu0/FastAPI-Template.git
+cd FastAPI-Template
+uv sync
+cp .env.example .env
+uv run aerich init-db
+uv run uvicorn src:app --reload --host 0.0.0.0 --port 8000
+```
+
+打开 <http://localhost:8000/docs>，用默认账号登录：
+
+```
+username: admin
+password: abcd1234
+```
+
+你将看到 **用户管理、角色管理、菜单管理、API 权限、部门管理、文件管理、审计日志** 的完整 Swagger 接口，开箱可用。
+
+> 也可以用脚手架一行创建：`npx create-fastapi-app@latest my-backend` → [create-fastapi-app](https://github.com/JiayuXu0/create-fastapi-app)
+
+---
+
+## 适合谁用
+
+| 适合 | 不适合 |
+| --- | --- |
+| 企业后台 / Admin API | 只想写一个极简单文件 demo |
+| SaaS / 多团队权限系统 | 需要完整 React/Vue 前端模板 |
+| 内部工具、运营平台、管理后台后端 | 需要微服务治理全家桶 |
+| 权限、审计、文件、任务队列都要的服务 | 只需要一个无状态 HTTP 转发层 |
+| 学习 FastAPI 分层架构和工程化实践 | 想完全从零手写每个基础模块 |
+
+**具体场景：**
+
+| 如果你需要 | 这里直接有 |
+| --- | --- |
+| 一个能直接开业务的后台 API 底座 | 用户、角色、菜单、API 权限、部门、文件、审计日志 |
+| 一个结构清楚的 FastAPI 样板 | API → Service → Repository → Model 三层分离 |
+| 一个带生产基础设施的模板 | Redis、PostgreSQL、Docker、Prometheus、Sentry、arq worker |
+| 一个适合团队长期维护的起点 | UV、ruff、pytest、coverage、GitHub Actions、配置分层 |
+
+---
+
+## 核心差异
+
+很多 FastAPI template 只解决"项目能跑起来"。这个模板更关注**业务开始后不会很快重写基础设施**。
 
 | 维度 | 常见 demo / boilerplate | FastAPI Template |
 | --- | --- | --- |
 | 认证 | 登录接口和 access token | JWT access/refresh、限流、密码哈希、文档 Basic Auth |
-| 权限 | 简单 role 字段 | 用户 -> 角色 -> 菜单/API，权限缓存和刷新机制 |
+| 权限 | 简单 role 字段 | 用户 → 角色 → 菜单/API，权限缓存和刷新机制 |
 | 后台模块 | 需要自己补 CRUD | 用户、角色、菜单、部门、API、文件、审计日志开箱可用 |
 | 架构 | 路由里混业务和 ORM | API、Service、Repository、Model 职责分离 |
 | 运维 | 只有启动命令 | 健康检查、Prometheus 指标、trace id、结构化日志、Sentry |
@@ -75,18 +119,6 @@
 <img src="docs/images/tech-stack.png" alt="FastAPI Template technology stack" width="100%" />
 
 </div>
-
----
-
-## 适合和不适合
-
-| 适合 | 不适合 |
-| --- | --- |
-| 企业后台 / Admin API | 只想写一个极简单文件 demo |
-| SaaS / 多团队权限系统 | 需要完整 React/Vue 前端模板 |
-| 内部工具、运营平台、管理后台后端 | 需要微服务治理全家桶 |
-| 权限、审计、文件、任务队列都要的服务 | 只需要一个无状态 HTTP 转发层 |
-| 学习 FastAPI 分层架构和工程化实践 | 想完全从零手写每个基础模块 |
 
 ---
 
@@ -114,7 +146,7 @@ uv run aerich init-db
 uv run uvicorn src:app --reload --host 0.0.0.0 --port 8000
 ```
 
-启动后常用入口：
+启动后可用入口：
 
 | 入口 | 地址 |
 | --- | --- |
@@ -131,7 +163,7 @@ username: admin
 password: abcd1234
 ```
 
-首次启动后请立即修改默认密码，并在生产环境替换 `SECRET_KEY`、`SWAGGER_UI_PASSWORD` 和数据库密码。
+> **重要**：首次启动后请立即修改默认密码，并在生产环境替换 `SECRET_KEY`、`SWAGGER_UI_PASSWORD` 和数据库密码。
 
 ### Docker Compose
 
@@ -159,7 +191,7 @@ Compose 会启动：
 | JWT 登录 | Done | access token + refresh token |
 | 登录限流 | Done | 默认 5 次/分钟 |
 | 刷新令牌限流 | Done | 默认 10 次/分钟 |
-| RBAC | Done | 用户 -> 角色 -> API/菜单 |
+| RBAC | Done | 用户 → 角色 → API/菜单 |
 | 超级管理员依赖 | Done | `SuperUserRequired` |
 | API 文档保护 | Done | Swagger/ReDoc Basic Auth |
 
