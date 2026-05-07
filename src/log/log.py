@@ -62,11 +62,15 @@ class LoggingConfig:
     """统一日志配置管理"""
 
     def __init__(self) -> None:
-        self.debug = settings.DEBUG
-        self.level = "DEBUG" if self.debug else "INFO"
+        self.environment = getattr(settings, "APP_ENV", "development")
+        self.debug = settings.DEBUG and self.environment != "testing"
+        self.level = (
+            "WARNING"
+            if self.environment == "testing"
+            else ("DEBUG" if self.debug else "INFO")
+        )
         self.log_dir = settings.LOGS_ROOT if hasattr(settings, "LOGS_ROOT") else "logs"
         self.service_name = getattr(settings, "PROJECT_NAME", "application")
-        self.environment = getattr(settings, "APP_ENV", "development")
         self.ensure_log_dir()
 
     def ensure_log_dir(self):
@@ -145,7 +149,18 @@ class LoggingConfig:
 
         # 拦截标准 logging，统一输出格式
         intercept_handler = InterceptHandler()
-        logging.basicConfig(handlers=[intercept_handler], level=0, force=True)
+        standard_log_level = (
+            logging.WARNING if self.environment == "testing" else logging.NOTSET
+        )
+        logging.basicConfig(
+            handlers=[intercept_handler],
+            level=standard_log_level,
+            force=True,
+        )
+
+        if self.environment == "testing":
+            for logger_name in ("aiosqlite", "asyncio", "httpx", "tortoise"):
+                logging.getLogger(logger_name).setLevel(logging.WARNING)
 
         for logger_name in (
             "uvicorn",
@@ -170,6 +185,9 @@ class LoggingConfig:
             diagnose=self.debug,
             enqueue=True,
         )
+
+        if self.environment == "testing":
+            return loguru_logger
 
         # 文件输出 - 所有级别日志
         loguru_logger.add(
