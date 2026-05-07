@@ -120,6 +120,17 @@ class TestPasswordSecurity:
         # 由于盐值不同，哈希应该不同
         assert hash1 != hash2
 
+    def test_generated_password_policy(self):
+        """测试生成密码满足基础复杂度"""
+        from utils.password import generate_password
+
+        password = generate_password()
+
+        assert len(password) >= 8
+        assert password.isalnum()
+        assert any(char.isalpha() for char in password)
+        assert any(char.isdigit() for char in password)
+
 
 class TestConfigurationSecurity:
     """配置安全测试"""
