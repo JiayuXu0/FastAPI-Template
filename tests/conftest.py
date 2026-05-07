@@ -22,23 +22,25 @@ try:  # pragma: no cover - fallback for environments without pytest-asyncio
     import pytest_asyncio  # type: ignore
 except ModuleNotFoundError:  # pragma: no cover
     try:
-        completed = subprocess.run(
+        subprocess.run(
             [sys.executable, "-m", "pip", "install", "pytest-asyncio>=0.23,<0.24"],
             check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
         )
         warnings.warn(
-            "Installed pytest-asyncio dynamically to enable async fixtures."
+            "Installed pytest-asyncio dynamically to enable async fixtures.",
+            stacklevel=2,
         )
         import pytest_asyncio  # type: ignore  # noqa: F401
     except Exception as exc:  # pragma: no cover
         warnings.warn(
-            f"pytest-asyncio is required for async tests but could not be installed: {exc}"
+            f"pytest-asyncio is required for async tests but could not be installed: {exc}",
+            stacklevel=2,
         )
 
-if "pytest_asyncio" in sys.modules:  # pragma: no cover - plugin auto-registration helper
+# pragma: no cover - plugin auto-registration helper
+if "pytest_asyncio" in sys.modules:
     pytest_plugins = ("pytest_asyncio",)
 
 from src import app
@@ -88,6 +90,9 @@ async def setup_database():
     yield
 
     # 清理
+    from src.utils.cache import cache_manager
+
+    await cache_manager.disconnect()
     await Tortoise.close_connections()
     os.unlink(temp_db.name)
 

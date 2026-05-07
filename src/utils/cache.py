@@ -112,7 +112,8 @@ class CacheManager:
     async def disconnect(self) -> None:
         if self.redis is not None:
             try:
-                await self.redis.close()
+                close = getattr(self.redis, "aclose", None) or self.redis.close
+                await close()
             except Exception as e:
                 logger.warning(f"Redis 关闭异常：{e}")
             finally:
